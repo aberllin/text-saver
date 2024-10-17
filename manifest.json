@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Text Saver",
+  "version": "1.0.0",
+  "description": "Saves selected text from the website",
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "index.html" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "permissions": ["contextMenus", "scripting", "activeTab"]
+}

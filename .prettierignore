@@ -1,0 +1,14 @@
+package.json
+npm-shrinkwrap.json
+package-lock.json
+
+# Just gets confused with out autogeneration before every test
+src/graphql/schema.json
+src/graphql/types.flow.js
+src/graphql/fragmentTypes.json
+
+coverage
+.plop
+.cache
+public
+storybook-static
