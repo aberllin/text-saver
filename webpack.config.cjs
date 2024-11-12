@@ -44,11 +44,22 @@ module.exports = {
           },
         },
       },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
     ],
   },
 
   resolve: {
-    extensions: ['.ts', '.tsx'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    alias: {
+      react: path.resolve('./node_modules/react'),
+      'react-dom': path.resolve('./node_modules/react-dom'),
+      '@restart/hooks': path.resolve('./node_modules/@restart/hooks'),
+      '@restart/ui': path.resolve('./node_modules/@restart/ui'),
+      'react-bootstrap': path.resolve('./node_modules/react-bootstrap'),
+    },
   },
 
   devtool: 'source-map',
