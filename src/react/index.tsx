@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import Login from './pages/Login';
 import React from 'react';
@@ -37,7 +38,7 @@ const container = document.getElementById('root');
 const root = createRoot(container!);
 
 root.render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>,
+  // <React.StrictMode>
+  <RouterProvider router={router} />,
+  // </React.StrictMode>,
 );

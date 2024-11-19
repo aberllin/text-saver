@@ -1,6 +1,7 @@
-import { User, Folder, Save } from 'react-feather';
+import { User, Folder, Save, ArrowLeft } from 'react-feather';
 
 const icons = {
+  arrowLeft: ArrowLeft,
   user: User,
   folder: Folder,
   save: Save,

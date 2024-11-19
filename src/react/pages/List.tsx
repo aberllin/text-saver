@@ -1,15 +1,32 @@
 import React, { useEffect, useState } from 'react';
+import { Accordion, Alert, Spinner } from 'react-bootstrap';
+import styled from 'styled-components';
+import { CenteredContainer, Header, Heading } from '../sharedStyles';
+import Logo from '../components/Logo';
+import { Link } from 'react-router-dom';
+import Icon from '../components/Icon';
+import type { AlertType } from '../App';
 
-interface SelectedTextItem {
+type SelectedTextItem = {
   id: string;
   text: string;
   url: string;
-}
+  title: string;
+};
 
-const List: React.FC = () => {
-  const [selectedTextList, setSelectedTextList] = useState<SelectedTextItem[]>(
-    [],
-  );
+type Props = {
+  setAlerts: React.Dispatch<React.SetStateAction<Array<AlertType>>>;
+};
+
+const text = {
+  noText: 'No saved text found',
+  genericError: 'Something went wrong. Please try again!',
+};
+
+const List: React.FC<Props> = ({ setAlerts }) => {
+  const [selectedTextList, setSelectedTextList] = useState<
+    Array<SelectedTextItem>
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +35,6 @@ const List: React.FC = () => {
       try {
         const authToken = await new Promise<string>(resolve => {
           chrome.storage.local.get('auth_token', data => {
-            console.log('dataToken', data);
             resolve(data.auth_token);
           });
         });
@@ -32,11 +48,10 @@ const List: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch saved text');
+          throw new Error(text.genericError);
         }
 
         const data = await response.json();
-        console.log('LIST DATA', data);
         setSelectedTextList(data.texts);
       } catch (err: any) {
         setError(err.message);
@@ -48,33 +63,47 @@ const List: React.FC = () => {
     fetchSelectedText();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading)
+    return (
+      <CenteredContainer>
+        <Spinner animation="border" role="status" />
+      </CenteredContainer>
+    );
+
+  if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <div>
-      <h1>Saved Selected Texts</h1>
+    <>
       {selectedTextList.length === 0 ? (
-        <p>No saved texts found.</p>
+        <NoText>{text.noText}</NoText>
       ) : (
-        <ul>
-          {selectedTextList.map(item => (
-            <li key={item.id}>
-              <p>
-                <strong>Text:</strong> {item.text}
-              </p>
-              <p>
-                <strong>URL:</strong>{' '}
-                <a href={item.url} target="_blank" rel="noopener noreferrer">
-                  {item.url}
-                </a>
-              </p>
-            </li>
+        <Accordion>
+          {selectedTextList.reverse().map(item => (
+            <Accordion.Item eventKey={item.id} key={item.id}>
+              <Accordion.Header>{item.title}</Accordion.Header>
+              <Accordion.Body>
+                <p>
+                  <strong>Text:</strong> {item.text}
+                </p>
+                <p>
+                  <strong>URL:</strong>{' '}
+                  <Link to={item.url} target="_blank" rel="noopener noreferrer">
+                    {item.url}
+                  </Link>
+                </p>
+              </Accordion.Body>
+            </Accordion.Item>
           ))}
-        </ul>
+        </Accordion>
       )}
-    </div>
+    </>
   );
 };
+
+const NoText = styled.p`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
 
 export default List;

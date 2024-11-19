@@ -17,8 +17,8 @@ bcrypt = Bcrypt(app)
 app.config['MYSQL_DATABASE_USER'] = os.environ.get('MYSQL_DB_USER')
 app.config['MYSQL_DATABASE_PASSWORD'] = os.environ.get('MYSQL_DB_PSWRD')
 app.config['SECRET_KEY'] = os.environ.get('MYSQL_SECRET_KEY')
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-app.config['MYSQL_DATABASE'] = 'text_saver_db'
+app.config['MYSQL_DATABASE_HOST'] = os.environ.get('MYSQL_HOST')
+app.config['MYSQL_DATABASE'] = os.environ.get('MYSQL_DB')
 
 def get_db():
     if 'db' not in g:
@@ -176,10 +176,11 @@ def save_text(user_id):
     data = request.json
     text = data.get('text')
     url = data.get('url')
+    title = data.get('title')
 
     cursor = g.cursor  # Use g.cursor instead of mysql.connection.cursor()
     try:
-        cursor.execute('INSERT INTO saved_texts (user_id, text, url) VALUES (%s, %s, %s)', (user_id, text, url))
+        cursor.execute('INSERT INTO saved_texts (user_id, text, url, title) VALUES (%s, %s, %s)', (user_id, text, url, title))
         g.db.commit()
         return jsonify({'message': 'Text saved successfully'}), 201
     except Exception as e:
@@ -193,9 +194,31 @@ def get_saved_texts(user_id):
     try:
         cursor.execute('SELECT text, url FROM saved_texts WHERE user_id = %s', (user_id,))
         texts = cursor.fetchall()
-        saved_texts = [{'text': text[0], 'url': text[1]} for text in texts]
+        print(texts)
+        saved_texts = [{'text': text[0], 'url': text[1], 'title': text[2]} for text in texts]
         return jsonify({'texts': saved_texts}), 200
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/delete_text/<int:text_id>', methods=['DELETE'])
+@token_required
+def delete_text(user_id, text_id):
+    cursor = g.cursor
+    try:
+        # Check if the text belongs to the current user
+        cursor.execute('SELECT * FROM saved_texts WHERE id = %s AND user_id = %s', (text_id, user_id))
+        text = cursor.fetchone()
+        
+        if not text:
+            return jsonify({'error': 'Text not found or you do not have permission to delete this text'}), 404
+
+        # Delete the text
+        cursor.execute('DELETE FROM saved_texts WHERE id = %s', (text_id,))
+        g.db.commit()
+
+        return jsonify({'message': 'Text deleted successfully'}), 200
+    except Exception as e:
+        g.db.rollback()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/logout', methods=['POST'])

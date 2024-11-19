@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
+import { Alert, Button, Form } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import Logo from '../components/Logo';
+import { Heading, Label } from '../sharedStyles';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +34,6 @@ const Login: React.FC = () => {
         chrome.storage.local.set({ auth_token: data.auth_token }, () => {
           navigate('/');
         });
-        navigate('/');
       } else {
         const data = await response.json();
         setError(data.error);
@@ -41,38 +44,61 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      Don't have an account? <Link to="/register">REGISTER</Link>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email:</label>
-          <input
+    <Container>
+      <Header>
+        <Logo /> <Heading>Hello!</Heading>
+      </Header>
+
+      <p>Welcome back dear friend!</p>
+
+      <Form onSubmit={handleSubmit} style={{ width: '90%' }}>
+        <Form.Group className="mb-2" controlId="formBasicEmail">
+          <Label>Email address</Label>
+          <Form.Control
             type="email"
+            placeholder="email@example.com"
             id="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
           />
-        </div>
-
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
+        </Form.Group>
+        <Form.Group className="mb-1" controlId="formBasicPassword">
+          <Label>Password</Label>
+          <Form.Control
             type="password"
+            placeholder="Password"
             id="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
           />
-        </div>
-
-        <button type="submit">Login</button>
-      </form>
-    </div>
+        </Form.Group>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
+        <p>
+          Don't have an account? <Link to="/register">Click to sign up!</Link>
+        </p>
+        <Button variant="primary" type="submit">
+          Log In
+        </Button>
+      </Form>
+    </Container>
   );
 };
+
+const Header = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+`;
+
+const Container = styled.div`
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+`;
 
 export default Login;
