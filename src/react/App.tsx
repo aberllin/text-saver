@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Alert, Tab, Tabs } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Spinner, Tab, Tabs } from 'react-bootstrap';
 import Dropdown from 'react-bootstrap/Dropdown';
-import styled from 'styled-components';
 import Icon from './components/Icon';
 import Logo from './components/Logo';
-import { Header, Heading, Label } from './sharedStyles';
+import { Header, Heading, JustificationContainer } from './sharedStyles';
 import { isEmpty } from 'ramda';
 import Saver from './pages/Saver';
 import List from './pages/List';
@@ -31,25 +30,108 @@ const text = {
 };
 
 const App: React.FC = () => {
+  const [selectedText, setSelectedText] = useState('');
   const [alerts, setAlerts] = useState<Array<AlertType>>([]);
   const [key, setKey] = useState<Content>(Content.Saver);
+  const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchSelectedText = async () => {
+      chrome.storage.local.get('selectedText', data => {
+        if (data.selectedText) {
+          setSelectedText(data.selectedText);
+          setTimeout(() => chrome.storage.local.remove('selectedText'), 100);
+        }
+      });
+    };
+
+    fetchSelectedText();
+
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      if (tabs.length > 0) {
+        setActiveTab(tabs[0]);
+      }
+    });
+  }, []);
 
   const handleLogout = () => {
     chrome.storage.local.remove('auth_token', () => {
-      navigate('/');
+      navigate('/login', { replace: true });
     });
   };
 
+  const handleSave = async () => {
+    setAlerts([]);
+
+    if (isEmpty(selectedText)) {
+      setAlerts(prev => [
+        ...prev,
+        { body: 'Text field cannot be empty', level: 'danger' },
+      ]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const authToken = await new Promise<string>(resolve => {
+        chrome.storage.local.get('auth_token', data => {
+          resolve(data.auth_token || '');
+        });
+      });
+
+      const response = await fetch('http://localhost:5001/save_text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          text: selectedText,
+          url: activeTab?.url || '',
+          title: activeTab?.title || activeTab?.url || '',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setAlerts(prev => [
+          ...prev,
+          { body: 'Text saved successfully', level: 'success' },
+        ]);
+      } else {
+        setAlerts(prev => [
+          ...prev,
+          {
+            body: result.error || 'Failed to save text. Try again!',
+            level: 'danger',
+          },
+        ]);
+      }
+    } catch (error) {
+      setAlerts(prev => [
+        ...prev,
+        { body: 'Failed to save text. Try again!', level: 'danger' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <JustificationContainer>
+        <Spinner animation="border" role="status" />
+      </JustificationContainer>
+    );
+  }
+
   return (
-    <Container>
+    <>
       <Header>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <Logo /> <Heading>{text.heading}</Heading>
         </div>
         <Dropdown>
@@ -63,9 +145,11 @@ const App: React.FC = () => {
           </Dropdown.Menu>
         </Dropdown>
       </Header>
+
       {alerts.length > 0 && (
         <Alert variant={alerts[0].level}>{alerts[0].body}</Alert>
       )}
+
       <Tabs
         activeKey={key}
         onSelect={tab => {
@@ -73,24 +157,23 @@ const App: React.FC = () => {
             setKey(tab as Content);
           }
         }}
-        className="mb-3"
+        className="mb-3 w-100"
       >
-        <Tab eventKey={Content.Saver} title={text.tabs.saver}>
-          <Saver setAlerts={setAlerts} />
+        <Tab eventKey={Content.Saver} title={text.tabs.saver} className="w-100">
+          <Saver
+            setAlerts={setAlerts}
+            text={selectedText}
+            activeTab={activeTab}
+            onTextChange={value => setSelectedText(value)}
+            onSave={handleSave}
+          />
         </Tab>
         <Tab eventKey={Content.List} title={text.tabs.list}>
           <List setAlerts={setAlerts} />
         </Tab>
       </Tabs>
-    </Container>
+    </>
   );
 };
-
-const Container = styled.div`
-  width: 400px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-`;
 
 export default App;

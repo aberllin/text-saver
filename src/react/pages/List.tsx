@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Accordion, Alert, Spinner } from 'react-bootstrap';
 import styled from 'styled-components';
-import { CenteredContainer, Header, Heading } from '../sharedStyles';
-import Logo from '../components/Logo';
+import { JustificationContainer } from '../sharedStyles';
 import { Link } from 'react-router-dom';
-import Icon from '../components/Icon';
 import type { AlertType } from '../App';
 
 type SelectedTextItem = {
@@ -33,6 +31,7 @@ const List: React.FC<Props> = ({ setAlerts }) => {
   useEffect(() => {
     const fetchSelectedText = async () => {
       try {
+        setLoading(true);
         const authToken = await new Promise<string>(resolve => {
           chrome.storage.local.get('auth_token', data => {
             resolve(data.auth_token);
@@ -48,11 +47,12 @@ const List: React.FC<Props> = ({ setAlerts }) => {
         });
 
         if (!response.ok) {
-          throw new Error(text.genericError);
+          const errorData = await response.json();
+          throw new Error(errorData.error || text.genericError);
         }
 
         const data = await response.json();
-        setSelectedTextList(data.texts);
+        setSelectedTextList(data.texts || []);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -65,9 +65,9 @@ const List: React.FC<Props> = ({ setAlerts }) => {
 
   if (loading)
     return (
-      <CenteredContainer>
+      <JustificationContainer>
         <Spinner animation="border" role="status" />
-      </CenteredContainer>
+      </JustificationContainer>
     );
 
   if (error) return <Alert variant="danger">{error}</Alert>;

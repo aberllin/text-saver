@@ -178,9 +178,13 @@ def save_text(user_id):
     url = data.get('url')
     title = data.get('title')
 
-    cursor = g.cursor  # Use g.cursor instead of mysql.connection.cursor()
+    cursor = g.cursor
     try:
-        cursor.execute('INSERT INTO saved_texts (user_id, text, url, title) VALUES (%s, %s, %s)', (user_id, text, url, title))
+        # Fixed SQL query - added correct number of placeholders
+        cursor.execute(
+            'INSERT INTO saved_texts (user_id, text, url, title) VALUES (%s, %s, %s, %s)', 
+            (user_id, text, url, title)
+        )
         g.db.commit()
         return jsonify({'message': 'Text saved successfully'}), 201
     except Exception as e:
@@ -192,13 +196,44 @@ def save_text(user_id):
 def get_saved_texts(user_id):
     cursor = g.cursor
     try:
-        cursor.execute('SELECT text, url FROM saved_texts WHERE user_id = %s', (user_id,))
+        
+        cursor.execute('SELECT id, email FROM users WHERE id = %s', (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        query = '''
+            SELECT id, text, url, title 
+            FROM saved_texts 
+            WHERE user_id = %s 
+            ORDER BY id DESC
+        '''
+        cursor.execute(query, (user_id,))
+        
         texts = cursor.fetchall()
-        print(texts)
-        saved_texts = [{'text': text[0], 'url': text[1], 'title': text[2]} for text in texts]
+        
+        if not texts:
+            return jsonify({'texts': []}), 200  # Return empty array instead of error
+    
+        saved_texts = []
+        for text in texts:
+            try:
+                text_dict = {
+                    'id': str(text[0]),
+                    'text': text[1],
+                    'url': text[2],
+                    'title': text[3]
+                }
+                saved_texts.append(text_dict)
+            except Exception as e:
+                continue
+        
         return jsonify({'texts': saved_texts}), 200
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
     
 @app.route('/delete_text/<int:text_id>', methods=['DELETE'])
 @token_required

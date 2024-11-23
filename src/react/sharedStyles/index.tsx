@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 export const Heading = styled.h1`
   font-size: 24px;
@@ -14,6 +14,7 @@ export const Label = styled.span`
 `;
 
 export const Header = styled.div`
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -21,9 +22,25 @@ export const Header = styled.div`
   margin-bottom: 10px;
 `;
 
-export const CenteredContainer = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: center;
-  justify-content: center;
-`;
+export const JustificationContainer = styled.div<{
+  $width?: string;
+  $justification?: 'center' | 'flex-start' | 'flex-end' | 'space-between';
+  $align?: 'center' | 'flex-start' | 'flex-end';
+  $direction?: 'column' | 'row';
+  $padding?: string | null;
+}>(
+  ({
+    $width = '400px',
+    $justification = 'flex-start',
+    $align = 'center',
+    $direction = 'column',
+    $padding = '24px',
+  }) => css`
+    width: ${$width};
+    padding: ${$padding === null ? '0' : $padding};
+    display: flex;
+    flex-direction: ${$direction};
+    align-items: ${$align};
+    justify-content: ${$justification};
+  `,
+);
