@@ -68,11 +68,10 @@ module.exports = {
 
   devtool: 'source-map',
 
-  // **DevServer**: Configuration for webpack-dev-server
   devServer: {
     static: path.join(__dirname, 'dist'),
     compress: true,
     port: 9000,
-    open: true, // Open the browser after server had been started
+    open: true,
   },
 };

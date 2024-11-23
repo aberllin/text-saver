@@ -5,6 +5,15 @@ import styled from 'styled-components';
 import Logo from '../components/Logo';
 import { Heading, JustificationContainer, Label } from '../sharedStyles';
 
+const text = {
+  signUp: 'Click to sign up!',
+  email: 'Email address',
+  password: 'Password',
+  noAccount: "Don't have an account?",
+  loginFailed: 'Login failed. Please try again.',
+  welcome: 'Welcome back dear friend!',
+};
+
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,10 +51,10 @@ const Login: React.FC = () => {
             navigate('/', { replace: true });
           }, 0);
         } else {
-          setError(data.error || 'Login failed. Please try again.');
+          setError(data.error || text.loginFailed);
         }
       } catch (err) {
-        setError('Login failed. Please try again.');
+        setError(text.loginFailed);
       } finally {
         setIsLoading(false);
       }
@@ -69,11 +78,11 @@ const Login: React.FC = () => {
         <Logo /> <Heading>Hello!</Heading>
       </Header>
 
-      <p>Welcome back dear friend!</p>
+      <p>{text.welcome}</p>
 
       <Form onSubmit={handleSubmit} style={{ width: '90%' }}>
         <Form.Group className="mb-2" controlId="formBasicEmail">
-          <Label>Email address</Label>
+          <Label>{text.email}</Label>
           <Form.Control
             type="email"
             placeholder="email@example.com"
@@ -85,7 +94,7 @@ const Login: React.FC = () => {
         </Form.Group>
 
         <Form.Group className="mb-1" controlId="formBasicPassword">
-          <Label>Password</Label>
+          <Label>{text.password}</Label>
           <Form.Control
             type="password"
             placeholder="Password"
@@ -100,7 +109,7 @@ const Login: React.FC = () => {
         {success && <Alert variant="success">{success}</Alert>}
 
         <p>
-          Don't have an account? <Link to="/register">Click to sign up!</Link>
+          {text.noAccount} <Link to="/register">{text.signUp}</Link>
         </p>
 
         <Button variant="primary" type="submit" disabled={isLoading}>

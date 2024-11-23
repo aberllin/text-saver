@@ -19,6 +19,11 @@ export type AlertType = {
   level: 'success' | 'danger';
 };
 
+export type OnValueChange = {
+  key: 'text' | 'url' | 'title';
+  value: string;
+};
+
 const text = {
   heading: 'Text saver',
   settings: 'Settings',
@@ -27,13 +32,17 @@ const text = {
     list: 'View all',
     saver: 'Text saver',
   },
+  textEmptyField: 'Text field cannot be empty',
+  successMessage: 'Text saved successfully',
+  saveError: 'Failed to save text. Try again!',
 };
 
 const App: React.FC = () => {
   const [selectedText, setSelectedText] = useState('');
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
   const [alerts, setAlerts] = useState<Array<AlertType>>([]);
   const [key, setKey] = useState<Content>(Content.Saver);
-  const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -50,8 +59,10 @@ const App: React.FC = () => {
     fetchSelectedText();
 
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      if (tabs.length > 0) {
-        setActiveTab(tabs[0]);
+      if (tabs.length > 0 && tabs[0]) {
+        const activeTab = tabs[0];
+        setTitle(activeTab.title ?? '');
+        setUrl(activeTab.url ?? '');
       }
     });
   }, []);
@@ -68,7 +79,7 @@ const App: React.FC = () => {
     if (isEmpty(selectedText)) {
       setAlerts(prev => [
         ...prev,
-        { body: 'Text field cannot be empty', level: 'danger' },
+        { body: text.textEmptyField, level: 'danger' },
       ]);
       return;
     }
@@ -89,8 +100,8 @@ const App: React.FC = () => {
         },
         body: JSON.stringify({
           text: selectedText,
-          url: activeTab?.url || '',
-          title: activeTab?.title || activeTab?.url || '',
+          url: url,
+          title: title,
         }),
       });
 
@@ -99,24 +110,33 @@ const App: React.FC = () => {
       if (response.ok) {
         setAlerts(prev => [
           ...prev,
-          { body: 'Text saved successfully', level: 'success' },
+          { body: text.successMessage, level: 'success' },
         ]);
       } else {
         setAlerts(prev => [
           ...prev,
           {
-            body: result.error || 'Failed to save text. Try again!',
+            body: result.error || text.saveError,
             level: 'danger',
           },
         ]);
       }
     } catch (error) {
-      setAlerts(prev => [
-        ...prev,
-        { body: 'Failed to save text. Try again!', level: 'danger' },
-      ]);
+      setAlerts(prev => [...prev, { body: text.saveError, level: 'danger' }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onValueChange = ({ key, value }: OnValueChange) => {
+    console.log({ key, value });
+    switch (key) {
+      case 'text':
+        return setSelectedText(value);
+      case 'title':
+        return setTitle(value);
+      case 'url':
+        setUrl(value);
     }
   };
 
@@ -140,7 +160,6 @@ const App: React.FC = () => {
           </Dropdown.Toggle>
 
           <Dropdown.Menu>
-            <Dropdown.Item href="#/action-1">{text.settings}</Dropdown.Item>
             <Dropdown.Item onClick={handleLogout}>{text.logout}</Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
@@ -153,6 +172,8 @@ const App: React.FC = () => {
       <Tabs
         activeKey={key}
         onSelect={tab => {
+          setAlerts([]);
+
           if (tab) {
             setKey(tab as Content);
           }
@@ -162,9 +183,10 @@ const App: React.FC = () => {
         <Tab eventKey={Content.Saver} title={text.tabs.saver} className="w-100">
           <Saver
             setAlerts={setAlerts}
-            text={selectedText}
-            activeTab={activeTab}
-            onTextChange={value => setSelectedText(value)}
+            selectedText={selectedText}
+            title={title}
+            url={url}
+            onValueChange={onValueChange}
             onSave={handleSave}
           />
         </Tab>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Accordion, Alert, Spinner } from 'react-bootstrap';
+import { Accordion, Spinner } from 'react-bootstrap';
 import styled from 'styled-components';
 import { JustificationContainer } from '../sharedStyles';
 import { Link } from 'react-router-dom';
@@ -26,7 +26,6 @@ const List: React.FC<Props> = ({ setAlerts }) => {
     Array<SelectedTextItem>
   >([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSelectedText = async () => {
@@ -54,7 +53,7 @@ const List: React.FC<Props> = ({ setAlerts }) => {
         const data = await response.json();
         setSelectedTextList(data.texts || []);
       } catch (err: any) {
-        setError(err.message);
+        setAlerts(prev => [...prev, { body: err, level: 'danger' }]);
       } finally {
         setLoading(false);
       }
@@ -70,12 +69,17 @@ const List: React.FC<Props> = ({ setAlerts }) => {
       </JustificationContainer>
     );
 
-  if (error) return <Alert variant="danger">{error}</Alert>;
-
   return (
     <>
       {selectedTextList.length === 0 ? (
-        <NoText>{text.noText}</NoText>
+        <JustificationContainer
+          $padding={null}
+          $width="100%"
+          $align="center"
+          $justification="center"
+        >
+          {text.noText}
+        </JustificationContainer>
       ) : (
         <Accordion>
           {selectedTextList.reverse().map(item => (
@@ -85,12 +89,12 @@ const List: React.FC<Props> = ({ setAlerts }) => {
                 <p>
                   <strong>Text:</strong> {item.text}
                 </p>
-                <p>
+                <UrlContainer>
                   <strong>URL:</strong>{' '}
                   <Link to={item.url} target="_blank" rel="noopener noreferrer">
                     {item.url}
                   </Link>
-                </p>
+                </UrlContainer>
               </Accordion.Body>
             </Accordion.Item>
           ))}
@@ -100,10 +104,12 @@ const List: React.FC<Props> = ({ setAlerts }) => {
   );
 };
 
-const NoText = styled.p`
-  display: flex;
-  justify-content: center;
-  align-items: center;
+const UrlContainer = styled.p`
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
 `;
 
 export default List;

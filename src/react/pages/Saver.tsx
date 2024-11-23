@@ -1,71 +1,80 @@
 import { Button, Form, InputGroup } from 'react-bootstrap';
-import styled from 'styled-components';
 import { isEmpty } from 'ramda';
 import { Label } from '../sharedStyles';
-import type { AlertType } from '../App';
+import type { AlertType, OnValueChange } from '../App';
+
+const text = {
+  url: 'URL',
+  title: 'Title',
+  save: 'Save',
+  selectedText: 'Selected Text',
+};
 
 type Props = {
   setAlerts: React.Dispatch<React.SetStateAction<Array<AlertType>>>;
-  text: string;
-  activeTab: chrome.tabs.Tab | null;
-  onTextChange: (value: string) => void;
+  selectedText: string;
+  title: string;
+  url: string;
+  onValueChange: (props: OnValueChange) => void;
   onSave: () => void;
 };
 
 const Saver: React.FC<Props> = ({
   setAlerts,
-  activeTab,
-  text,
+  title,
+  url,
+  selectedText,
   onSave,
-  onTextChange,
-}) => (
-  <>
-    <form>
-      <Form.Group className="mb-1">
-        <Label>Selected Text</Label>
-        <Form.Control
-          as="textarea"
-          aria-label="With textarea"
-          value={text}
-          onChange={e => {
-            setAlerts([]);
-            onTextChange(e.target.value);
-          }}
-        />
-      </Form.Group>
-      <InputGroup className="mb-1">
-        <InputGroup.Text id="basic-addon1">Title</InputGroup.Text>
-        <Form.Control
-          aria-label="Small"
-          aria-describedby="inputGroup-sizing-sm"
-          value={activeTab?.title || ''}
-          readOnly
-        />
-      </InputGroup>
-      <InputGroup className="mb-3">
-        <InputGroup.Text id="basic-addon1">URL</InputGroup.Text>
-        <Form.Control
-          aria-label="Small"
-          aria-describedby="inputGroup-sizing-sm"
-          value={activeTab?.url || ''}
-          readOnly
-        />
-      </InputGroup>
-      <Button
-        onClick={onSave}
-        disabled={isEmpty(text)}
-        variant={isEmpty(text) ? 'secondary' : 'primary'}
-      >
-        Save
-      </Button>
-    </form>
-  </>
-);
+  onValueChange,
+}) => {
+  const handleChange = (
+    key: OnValueChange['key'],
+    value: OnValueChange['value'],
+  ) => {
+    setAlerts([]);
+    onValueChange({ key, value });
+  };
 
-const Content = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-`;
+  return (
+    <>
+      <form>
+        <Form.Group className="mb-1">
+          <Label>{text.save}</Label>
+          <Form.Control
+            as="textarea"
+            aria-label="With textarea"
+            value={selectedText}
+            onChange={e => handleChange('text', e.target.value)}
+          />
+        </Form.Group>
+        <InputGroup className="mb-1">
+          <InputGroup.Text id="basic-addon1">{text.title}</InputGroup.Text>
+          <Form.Control
+            aria-label="Small"
+            aria-describedby="inputGroup-sizing-sm"
+            value={title}
+            onChange={e => handleChange('title', e.target.value)}
+          />
+        </InputGroup>
+        <InputGroup className="mb-3">
+          <InputGroup.Text id="basic-addon1">{text.url}</InputGroup.Text>
+          <Form.Control
+            aria-label="Small"
+            aria-describedby="inputGroup-sizing-sm"
+            value={url}
+            onChange={e => handleChange('url', e.target.value)}
+          />
+        </InputGroup>
+        <Button
+          onClick={onSave}
+          disabled={isEmpty(text)}
+          variant={isEmpty(text) ? 'secondary' : 'primary'}
+        >
+          {text.save}
+        </Button>
+      </form>
+    </>
+  );
+};
 
 export default Saver;
