@@ -6,7 +6,11 @@
   "background": { "service_worker": "background.js" },
   "action": {
     "default_popup": "index.html",
-    "default_icon": "icons/icon48.png"
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
@@ -19,13 +23,17 @@
       "js": ["contentScript.js"]
     }
   ],
-  "host_permissions": [
-    "http://localhost:5000/*",
-    "http://localhost:5001/*",
-    "https://127.0.0.1:5000/*"
-  ],
-  "permissions": ["contextMenus", "scripting", "activeTab", "tabs", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "permissions": ["contextMenus", "storage", "tabs", "activeTab"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  },
+  "author": "Aberllin",
+  "homepage_url": "https://github.com/aberllin/text-saver",
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

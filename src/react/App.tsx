@@ -166,7 +166,9 @@ const App: React.FC = () => {
       </Header>
 
       {alerts.length > 0 && (
-        <Alert variant={alerts[0].level}>{alerts[0].body}</Alert>
+        <Alert className="w-100" variant={alerts[0].level}>
+          {alerts[0].body}
+        </Alert>
       )}
 
       <Tabs

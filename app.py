@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session, g
+from flask import Flask, request, jsonify, g
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 import mysql.connector
@@ -11,7 +11,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, origins=["chrome-extension://lgdeoamionfolgdmcijdfgagblaalfol"])  # Allow requests from the frontend
+# Allow requests from the frontend
+CORS(app, origins=["chrome-extension://lgdeoamionfolgdmcijdfgagblaalfol"])  
 bcrypt = Bcrypt(app)
 
 app.config['MYSQL_DATABASE_USER'] = os.environ.get('MYSQL_DB_USER')
@@ -37,7 +38,7 @@ def before_request():
     g.cursor = g.db.cursor()
 
 @app.teardown_request
-def teardown_request(exception):
+def teardown_request():
     # Close the cursor and connection after the request is processed
     cursor = g.pop('cursor', None)
     if cursor is not None:
@@ -47,7 +48,7 @@ def teardown_request(exception):
     if db is not None:
         db.close()
 
-# Helper decorator for token-based authentication
+# Helper for token-based authentication
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -120,9 +121,6 @@ def register():
             algorithm='HS256'
         )
 
-        # Uncomment decode if necessary based on your jwt library version
-        # token = token.decode('utf-8')  
-
         return jsonify({
             'message': 'User registered successfully',
             'user': {'id': user[0], 'email': user[1]},
@@ -168,7 +166,8 @@ def login():
     except Exception as e:
         return jsonify({'error': 'Login failed: ' + str(e)}), 500
     finally:
-        cursor.close()  # Ensure the cursor is closed regardless of success or failure
+         # Ensure the cursor is closed regardless of success or failure
+        cursor.close() 
 
 @app.route('/save_text', methods=['POST'])
 @token_required
@@ -180,7 +179,6 @@ def save_text(user_id):
 
     cursor = g.cursor
     try:
-        # Fixed SQL query - added correct number of placeholders
         cursor.execute(
             'INSERT INTO saved_texts (user_id, text, url, title) VALUES (%s, %s, %s, %s)', 
             (user_id, text, url, title)
@@ -196,7 +194,6 @@ def save_text(user_id):
 def get_saved_texts(user_id):
     cursor = g.cursor
     try:
-        
         cursor.execute('SELECT id, email FROM users WHERE id = %s', (user_id,))
         user = cursor.fetchone()
         
@@ -214,7 +211,8 @@ def get_saved_texts(user_id):
         texts = cursor.fetchall()
         
         if not texts:
-            return jsonify({'texts': []}), 200  # Return empty array instead of error
+             # Return empty array instead of error
+            return jsonify({'texts': []}), 200 
     
         saved_texts = []
         for text in texts:

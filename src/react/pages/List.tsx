@@ -19,6 +19,7 @@ type Props = {
 const text = {
   noText: 'No saved text found',
   genericError: 'Something went wrong. Please try again!',
+  remove: 'Remove',
 };
 
 const List: React.FC<Props> = ({ setAlerts }) => {
@@ -27,40 +28,81 @@ const List: React.FC<Props> = ({ setAlerts }) => {
   >([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const fetchSelectedText = async () => {
-      try {
-        setLoading(true);
-        const authToken = await new Promise<string>(resolve => {
-          chrome.storage.local.get('auth_token', data => {
-            resolve(data.auth_token);
-          });
+  const fetchSelectedText = async () => {
+    try {
+      setLoading(true);
+      const authToken = await new Promise<string>(resolve => {
+        chrome.storage.local.get('auth_token', data => {
+          resolve(data.auth_token);
         });
+      });
 
-        const response = await fetch('http://localhost:5001/texts', {
-          method: 'GET',
+      const response = await fetch('http://localhost:5001/texts', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || text.genericError);
+      }
+
+      const data = await response.json();
+      setSelectedTextList(data.texts || []);
+    } catch (err: any) {
+      setAlerts(prev => [
+        ...prev,
+        { body: err.message || err, level: 'danger' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSelectedText();
+  }, []);
+
+  const handleDelete = async (textId: string) => {
+    try {
+      const authToken = await new Promise<string>(resolve => {
+        chrome.storage.local.get('auth_token', data => {
+          resolve(data.auth_token);
+        });
+      });
+
+      const response = await fetch(
+        `http://localhost:5001/delete_text/${textId}`,
+        {
+          method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${authToken}`,
           },
-        });
+        },
+      );
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || text.genericError);
-        }
-
-        const data = await response.json();
-        setSelectedTextList(data.texts || []);
-      } catch (err: any) {
-        setAlerts(prev => [...prev, { body: err, level: 'danger' }]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || text.genericError);
       }
-    };
 
-    fetchSelectedText();
-  }, []);
+      setAlerts(prev => [
+        ...prev,
+        { body: 'Text deleted successfully', level: 'success' },
+      ]);
+      // Refresh the list after deletion
+      fetchSelectedText();
+    } catch (err: any) {
+      setAlerts(prev => [
+        ...prev,
+        { body: err.message || err, level: 'danger' },
+      ]);
+    }
+  };
 
   if (loading)
     return (
@@ -83,7 +125,7 @@ const List: React.FC<Props> = ({ setAlerts }) => {
       ) : (
         <Accordion>
           {selectedTextList.reverse().map(item => (
-            <Accordion.Item eventKey={item.id} key={item.id}>
+            <Accordion.Item eventKey={item.id} key={item.id} className="w-100">
               <Accordion.Header>{item.title}</Accordion.Header>
               <Accordion.Body>
                 <p>
@@ -95,6 +137,14 @@ const List: React.FC<Props> = ({ setAlerts }) => {
                     {item.url}
                   </Link>
                 </UrlContainer>
+                <DeleteButton
+                  onClick={e => {
+                    e.preventDefault();
+                    handleDelete(item.id);
+                  }}
+                >
+                  {text.remove}
+                </DeleteButton>
               </Accordion.Body>
             </Accordion.Item>
           ))}
@@ -103,6 +153,20 @@ const List: React.FC<Props> = ({ setAlerts }) => {
     </>
   );
 };
+
+const DeleteButton = styled.button`
+  background-color: #8b0404;
+  color: white;
+  width: 100%;
+  outline: none;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 6px;
+
+  &:hover {
+    background-color: #cb1212;
+  }
+`;
 
 const UrlContainer = styled.p`
   display: block;

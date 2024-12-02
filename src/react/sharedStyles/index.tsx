@@ -27,6 +27,7 @@ export const JustificationContainer = styled.div<{
   $justification?: 'center' | 'flex-start' | 'flex-end' | 'space-between';
   $align?: 'center' | 'flex-start' | 'flex-end';
   $direction?: 'column' | 'row';
+  $gap?: string;
   $padding?: string | null;
 }>(
   ({
@@ -35,6 +36,7 @@ export const JustificationContainer = styled.div<{
     $align = 'center',
     $direction = 'column',
     $padding = '24px',
+    $gap,
   }) => css`
     width: ${$width};
     padding: ${$padding === null ? '0' : $padding};
@@ -42,5 +44,10 @@ export const JustificationContainer = styled.div<{
     flex-direction: ${$direction};
     align-items: ${$align};
     justify-content: ${$justification};
+
+    ${$gap &&
+    css`
+      gap: ${$gap};
+    `}
   `,
 );
